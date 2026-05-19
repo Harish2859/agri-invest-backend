@@ -1,0 +1,1 @@
+UPDATE users SET role = 'INVESTOR' WHERE id = 10;
