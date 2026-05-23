@@ -1,6 +1,7 @@
 package com.agriinvest.platform.controller;
 
 import com.agriinvest.platform.entity.User;
+import com.agriinvest.platform.entity.KycStatus;
 import com.agriinvest.platform.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +33,7 @@ class KycControllerTest {
     private KycController kycController;
 
     @Test
-    void uploadKycSavesDocumentUrlAndResetsVerification() {
+    void uploadKycFarmerSavesDocumentUrlAndMarksSubmittedForReview() {
         User farmer = new User();
         farmer.setEmail("farmer@example.com");
         farmer.setRole(User.Role.FARMER);
@@ -47,12 +48,47 @@ class KycControllerTest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(Map.of("message", "KYC document submitted successfully for review."));
+        assertThat(response.getBody()).isEqualTo(Map.of(
+                "message", "KYC document submitted successfully for review.",
+                "verified", false,
+                "kycStatus", "SUBMITTED"
+        ));
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
         assertThat(userCaptor.getValue().getKycDocumentUrl()).isEqualTo("https://files.example/kyc.pdf");
         assertThat(userCaptor.getValue().isVerified()).isFalse();
+        assertThat(userCaptor.getValue().getKycStatus()).isEqualTo(KycStatus.SUBMITTED);
+        assertThat(userCaptor.getValue().getKycVerifiedAt()).isNull();
+    }
+
+    @Test
+    void uploadKycInvestorAutoApprovesImmediately() {
+        User investor = new User();
+        investor.setEmail("investor@example.com");
+        investor.setRole(User.Role.INVESTOR);
+        investor.setVerified(false);
+
+        when(userRepository.findByEmail("investor@example.com")).thenReturn(Optional.of(investor));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ResponseEntity<?> response = kycController.uploadKyc(
+                Map.of("documentUrl", "https://files.example/investor-kyc.pdf"),
+                new TestingAuthenticationToken("investor@example.com", null)
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(Map.of(
+                "message", "KYC submitted and auto-verified successfully.",
+                "verified", true,
+                "kycStatus", "APPROVED"
+        ));
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertThat(userCaptor.getValue().getKycStatus()).isEqualTo(KycStatus.APPROVED);
+        assertThat(userCaptor.getValue().isVerified()).isTrue();
+        assertThat(userCaptor.getValue().getKycVerifiedAt()).isNotNull();
     }
 
     @Test
@@ -79,12 +115,12 @@ class KycControllerTest {
     }
 
     @Test
-    void uploadKycEndpointRequiresFarmerRoleAnnotation() throws NoSuchMethodException {
+    void uploadKycEndpointRequiresFarmerOrInvestorRoleAnnotation() throws NoSuchMethodException {
         PreAuthorize annotation = KycController.class
                 .getMethod("uploadKyc", Map.class, org.springframework.security.core.Authentication.class)
                 .getAnnotation(PreAuthorize.class);
 
         assertThat(annotation).isNotNull();
-        assertThat(annotation.value()).isEqualTo("hasAuthority('FARMER')");
+        assertThat(annotation.value()).isEqualTo("hasAnyAuthority('FARMER','INVESTOR')");
     }
 }

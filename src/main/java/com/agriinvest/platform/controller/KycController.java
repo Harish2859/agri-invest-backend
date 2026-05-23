@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -24,23 +25,35 @@ public class KycController {
     }
 
     @PostMapping("/upload-kyc")
-    @PreAuthorize("hasAuthority('FARMER')")
+    @PreAuthorize("hasAnyAuthority('FARMER','INVESTOR')")
     public ResponseEntity<?> uploadKyc(@RequestBody Map<String, String> request, Authentication authentication) {
         String documentUrl = request.get("documentUrl");
         if (documentUrl == null || documentUrl.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "documentUrl is required"));
         }
 
-        User farmer = userRepository.findByEmail(authentication.getName())
+        User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        farmer.setKycDocumentUrl(documentUrl.trim());
-        farmer.setKycStatus(KycStatus.SUBMITTED);
-        farmer.setKycRejectionReason(null);
-        farmer.setKycVerifiedAt(null);
-        farmer.setVerified(false);
-        userRepository.save(farmer);
+        user.setKycDocumentUrl(documentUrl.trim());
+        user.setKycRejectionReason(null);
+        if (user.getRole() == User.Role.INVESTOR) {
+            user.setKycStatus(KycStatus.APPROVED);
+            user.setKycVerifiedAt(LocalDateTime.now());
+            user.setVerified(true);
+        } else {
+            user.setKycStatus(KycStatus.SUBMITTED);
+            user.setKycVerifiedAt(null);
+            user.setVerified(false);
+        }
+        userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "KYC document submitted successfully for review."));
+        return ResponseEntity.ok(Map.of(
+                "message", user.getRole() == User.Role.INVESTOR
+                        ? "KYC submitted and auto-verified successfully."
+                        : "KYC document submitted successfully for review.",
+                "verified", user.isVerified(),
+                "kycStatus", user.getKycStatus().name()
+        ));
     }
 }
