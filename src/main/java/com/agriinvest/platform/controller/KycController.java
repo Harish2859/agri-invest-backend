@@ -1,6 +1,7 @@
 package com.agriinvest.platform.controller;
 
 import com.agriinvest.platform.entity.User;
+import com.agriinvest.platform.entity.KycStatus;
 import com.agriinvest.platform.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +35,9 @@ public class KycController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         farmer.setKycDocumentUrl(documentUrl.trim());
+        farmer.setKycStatus(KycStatus.SUBMITTED);
+        farmer.setKycRejectionReason(null);
+        farmer.setKycVerifiedAt(null);
         farmer.setVerified(false);
         userRepository.save(farmer);
 

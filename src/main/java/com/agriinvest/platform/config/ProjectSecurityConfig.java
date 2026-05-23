@@ -40,6 +40,7 @@ public class ProjectSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
                         .requestMatchers("/api/projects/discover").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/projects/*/settle").hasAuthority("FARMER")
                         .requestMatchers("/error").permitAll()

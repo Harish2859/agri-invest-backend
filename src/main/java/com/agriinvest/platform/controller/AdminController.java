@@ -1,6 +1,7 @@
 package com.agriinvest.platform.controller;
 
 import com.agriinvest.platform.entity.FarmProject;
+import com.agriinvest.platform.entity.KycStatus;
 import com.agriinvest.platform.entity.Milestone;
 import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.repository.UserRepository;
@@ -43,7 +44,7 @@ public class AdminController {
     @PreAuthorize("hasAuthority('VILLAGE_LEAD')")
     public ResponseEntity<List<PendingFarmerView>> getPendingKyc() {
         List<PendingFarmerView> pendingFarmers = userRepository
-                .findByVerifiedFalseAndRoleOrderByCreatedAtAsc(User.Role.FARMER)
+                .findByKycStatusAndRoleOrderByCreatedAtAsc(KycStatus.SUBMITTED, User.Role.FARMER)
                 .stream()
                 .map(user -> new PendingFarmerView(
                         user.getId(),
@@ -97,6 +98,13 @@ public class AdminController {
         }
 
         farmer.setVerified(approve);
+        farmer.setKycStatus(approve ? KycStatus.APPROVED : KycStatus.REJECTED);
+        farmer.setKycVerifiedAt(approve ? LocalDateTime.now() : null);
+        if (approve) {
+            farmer.setKycRejectionReason(null);
+        } else {
+            farmer.setKycRejectionReason("Verification rejected by village lead. Please re-submit clear KYC documents.");
+        }
         userRepository.save(farmer);
 
         if (approve) {

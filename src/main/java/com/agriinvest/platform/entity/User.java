@@ -38,6 +38,16 @@ public class User implements UserDetails {
     @Column(name = "kyc_document_url")
     private String kycDocumentUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kyc_status", nullable = false)
+    private KycStatus kycStatus = KycStatus.PENDING;
+
+    @Column(name = "kyc_rejection_reason")
+    private String kycRejectionReason;
+
+    @Column(name = "kyc_verified_at")
+    private LocalDateTime kycVerifiedAt;
+
     @Column(name = "verified", nullable = false)
     private boolean verified = false;
 

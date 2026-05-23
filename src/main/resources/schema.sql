@@ -20,6 +20,15 @@ ALTER TABLE users
 ADD COLUMN IF NOT EXISTS wallet_balance DOUBLE PRECISION NOT NULL DEFAULT 0;
 
 ALTER TABLE users
+ADD COLUMN IF NOT EXISTS kyc_status VARCHAR(32);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS kyc_rejection_reason VARCHAR(255);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS kyc_verified_at TIMESTAMP;
+
+ALTER TABLE users
 ALTER COLUMN wallet_balance TYPE NUMERIC(12,2) USING wallet_balance::numeric,
 ALTER COLUMN wallet_balance SET DEFAULT 0.00;
 
@@ -40,3 +49,15 @@ WHERE equity_offered IS NULL;
 
 ALTER TABLE farm_projects
 ALTER COLUMN equity_offered SET DEFAULT 0;
+
+-- KYC status backfill for legacy rows
+UPDATE users
+SET kyc_status = 'APPROVED'
+WHERE kyc_status IS NULL AND verified = true;
+
+UPDATE users
+SET kyc_status = 'PENDING'
+WHERE kyc_status IS NULL AND verified = false;
+
+ALTER TABLE users
+ALTER COLUMN kyc_status SET NOT NULL;

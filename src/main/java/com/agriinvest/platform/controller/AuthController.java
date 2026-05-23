@@ -55,6 +55,8 @@ public class AuthController {
                     response.put("fullName", user.getFullName());
                     response.put("email", user.getEmail());
                     response.put("verified", user.isVerified());
+                    response.put("kycStatus", user.getKycStatus() != null ? user.getKycStatus().name() : "PENDING");
+                    response.put("kycRejectionReason", user.getKycRejectionReason());
 
                     return ResponseEntity.ok(response);
                 })
@@ -65,13 +67,17 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> me(Authentication authentication) {
         return userService.findByEmail(authentication.getName())
-                .map(user -> ResponseEntity.ok(Map.of(
-                        "id", user.getId(),
-                        "fullName", user.getFullName(),
-                        "email", user.getEmail(),
-                        "role", user.getRole() != null ? user.getRole().name() : "GUEST",
-                        "verified", user.isVerified()
-                )))
+                .map(user -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("id", user.getId());
+                    response.put("fullName", user.getFullName());
+                    response.put("email", user.getEmail());
+                    response.put("role", user.getRole() != null ? user.getRole().name() : "GUEST");
+                    response.put("verified", user.isVerified());
+                    response.put("kycStatus", user.getKycStatus() != null ? user.getKycStatus().name() : "PENDING");
+                    response.put("kycRejectionReason", user.getKycRejectionReason());
+                    return ResponseEntity.ok(response);
+                })
                 .orElse(ResponseEntity.status(404).body(Map.of("error", "User not found")));
     }
 }
