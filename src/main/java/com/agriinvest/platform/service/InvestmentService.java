@@ -120,4 +120,33 @@ public class InvestmentService {
         projectRepository.save(project);
         return savedInvestment;
     }
+
+    @Transactional(readOnly = true)
+    public String getInvestorEmail(Long investmentId) {
+        Investment inv = investmentRepository.findById(investmentId)
+                .orElseThrow(() -> new RuntimeException("Investment record not found"));
+        if (inv.getInvestor() == null || inv.getInvestor().getEmail() == null) {
+            throw new RuntimeException("Investor not found for this investment");
+        }
+        return inv.getInvestor().getEmail();
+    }
+
+    @Transactional
+    public Investment processSecureCompletion(Long investmentId, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency key is required.");
+        }
+
+        Investment inv = investmentRepository.findById(investmentId)
+                .orElseThrow(() -> new RuntimeException("Investment record not found"));
+
+        if ("COMPLETED".equals(inv.getStatus())) {
+            if (inv.getTransactionId() != null && !inv.getTransactionId().equals(idempotencyKey)) {
+                throw new IllegalStateException("Investment already completed with a different idempotency key.");
+            }
+            return inv;
+        }
+
+        return completeInvestment(investmentId, idempotencyKey);
+    }
 }

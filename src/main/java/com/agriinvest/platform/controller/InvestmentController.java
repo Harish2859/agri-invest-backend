@@ -85,9 +85,19 @@ public class InvestmentController {
     }
 
     @PostMapping("/complete/{id}")
-    public ResponseEntity<?> complete(@PathVariable Long id, @RequestParam String txnId) {
+    @PreAuthorize("hasAuthority('VILLAGE_LEAD') or authentication.name == @investmentService.getInvestorEmail(#id)")
+    public ResponseEntity<?> complete(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         try {
-            return ResponseEntity.ok(investmentService.completeInvestment(id, txnId));
+            String idempotencyKey = payload.get("idempotency_key");
+            if (idempotencyKey == null || idempotencyKey.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing mandatory idempotency_key"));
+            }
+            Investment completed = investmentService.processSecureCompletion(id, idempotencyKey.trim());
+            return ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "investmentId", completed.getId(),
+                    "message", "Investment ledger verified and locked"
+            ));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
