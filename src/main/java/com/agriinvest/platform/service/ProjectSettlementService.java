@@ -108,13 +108,21 @@ public class ProjectSettlementService {
             throw new IllegalStateException("Cannot settle project: no completed investments found.");
         }
 
+        BigDecimal totalInvestedPool = investments.stream()
+                .map(Investment::getAmountInvested)
+                .map(BigDecimal::valueOf)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalInvestedPool.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Cannot settle project: invested pool is invalid.");
+        }
+
         for (Investment investment : investments) {
             if (investment.getAmountInvested() == null || investment.getAmountInvested() <= 0) {
                 throw new IllegalStateException("Investment " + investment.getId() + " has invalid invested amount.");
             }
-            BigDecimal sharePercentage = BigDecimal.valueOf(investment.getAmountInvested())
-                    .divide(targetAmount, 8, RoundingMode.HALF_UP);
-            BigDecimal finalPayout = sharePercentage.multiply(investorTotalPool);
+            BigDecimal amountInvested = BigDecimal.valueOf(investment.getAmountInvested());
+            BigDecimal ownershipRatio = amountInvested.divide(totalInvestedPool, 8, RoundingMode.HALF_UP);
+            BigDecimal finalPayout = finalRevenueValue.multiply(ownershipRatio).setScale(2, RoundingMode.HALF_UP);
 
             if (investment.getInvestor() == null || investment.getInvestor().getId() == null) {
                 throw new IllegalStateException("Investment " + investment.getId() + " is missing an investor.");

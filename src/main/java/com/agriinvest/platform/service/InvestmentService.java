@@ -5,6 +5,7 @@ import com.agriinvest.platform.entity.Investment;
 import com.agriinvest.platform.entity.ProjectStatus;
 import com.agriinvest.platform.repository.InvestmentRepository;
 import com.agriinvest.platform.repository.ProjectRepository;
+import com.agriinvest.platform.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,15 +17,18 @@ public class InvestmentService {
 
     private final InvestmentRepository investmentRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MilestoneService milestoneService;
 
     public InvestmentService(InvestmentRepository investmentRepository,
                              ProjectRepository projectRepository,
+                             UserRepository userRepository,
                              NotificationService notificationService,
                              MilestoneService milestoneService) {
         this.investmentRepository = investmentRepository;
         this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.milestoneService = milestoneService;
     }
@@ -101,22 +105,41 @@ public class InvestmentService {
 
         FarmProject project = projectRepository.findByIdWithLock(inv.getProject().getId())
                 .orElseThrow(() -> new RuntimeException("Project not found with ID: " + inv.getProject().getId()));
+        if (inv.getInvestor() == null || inv.getInvestor().getId() == null) {
+            throw new RuntimeException("Investor not found for this investment");
+        }
+
+        var investor = userRepository.findByIdWithLock(inv.getInvestor().getId())
+                .orElseThrow(() -> new RuntimeException("Investor profile not found"));
+
+        BigDecimal amountInvested = BigDecimal.valueOf(inv.getAmountInvested());
+        if (amountInvested.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Investment amount must be greater than zero.");
+        }
+
+        BigDecimal walletBalance = investor.getWalletBalance() != null ? investor.getWalletBalance() : BigDecimal.ZERO;
+        if (walletBalance.compareTo(amountInvested) < 0) {
+            throw new IllegalArgumentException("Insufficient wallet balance. Please add funds before investing.");
+        }
+
+        investor.setWalletBalance(walletBalance.subtract(amountInvested));
 
         inv.setStatus("COMPLETED");
         inv.setTransactionId(transactionId);
         inv.setInvestmentDate(LocalDateTime.now());
         Investment savedInvestment = investmentRepository.save(inv);
 
-        Double reconciledFunding = investmentRepository.getActualRaisedAmount(project.getId());
-        double canonicalFunding = reconciledFunding != null ? reconciledFunding : 0.0;
-        project.setCurrentFunding(BigDecimal.valueOf(canonicalFunding));
-        project.setEscrowBalance(BigDecimal.valueOf(canonicalFunding));
+        BigDecimal currentFunding = project.getCurrentFunding() != null ? project.getCurrentFunding() : BigDecimal.ZERO;
+        BigDecimal escrowBalance = project.getEscrowBalance() != null ? project.getEscrowBalance() : BigDecimal.ZERO;
+        project.setCurrentFunding(currentFunding.add(amountInvested));
+        project.setEscrowBalance(escrowBalance.add(amountInvested));
 
-        if (canonicalFunding >= project.getTargetAmount().doubleValue()) {
+        if (project.getCurrentFunding().compareTo(project.getTargetAmount()) >= 0) {
             project.setStatus(ProjectStatus.FULLY_FUNDED);
             milestoneService.generateDefaultMilestones(project);
         }
 
+        userRepository.save(investor);
         projectRepository.save(project);
         return savedInvestment;
     }

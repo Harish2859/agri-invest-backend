@@ -6,6 +6,7 @@ import com.agriinvest.platform.entity.ProjectStatus;
 import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.repository.InvestmentRepository;
 import com.agriinvest.platform.repository.ProjectRepository;
+import com.agriinvest.platform.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +30,9 @@ class InvestmentServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private NotificationService notificationService;
@@ -75,12 +79,17 @@ class InvestmentServiceTest {
         Investment investment = new Investment();
         investment.setId(12L);
         investment.setProject(project);
+        User investor = new User();
+        investor.setId(45L);
+        investor.setWalletBalance(BigDecimal.valueOf(300.0));
+        investment.setInvestor(investor);
         investment.setAmountInvested(150.0);
         investment.setStatus("PENDING");
 
         when(investmentRepository.findById(12L)).thenReturn(Optional.of(investment));
         when(projectRepository.findByIdWithLock(7L)).thenReturn(Optional.of(project));
-        when(investmentRepository.getActualRaisedAmount(7L)).thenReturn(1000.0);
+        when(userRepository.findByIdWithLock(45L)).thenReturn(Optional.of(investor));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(projectRepository.save(any(FarmProject.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(investmentRepository.save(any(Investment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -88,6 +97,7 @@ class InvestmentServiceTest {
 
         assertThat(saved.getStatus()).isEqualTo("COMPLETED");
         assertThat(project.getEscrowBalance()).isEqualByComparingTo(BigDecimal.valueOf(1000.0));
+        assertThat(investor.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(150.0));
         assertThat(project.getStatus()).isEqualTo(ProjectStatus.FULLY_FUNDED);
         verify(milestoneService).generateDefaultMilestones(project);
     }

@@ -47,7 +47,7 @@ class ProjectSettlementServiceTest {
     private ProjectSettlementService projectSettlementService;
 
     @Test
-    void settleProjectCreditsFarmerAndInvestorsUsingEquityPool() {
+    void settleProjectCreditsFarmerAndInvestorsWithPrincipalPlusReturns() {
         User investor = new User();
         investor.setId(14L);
         investor.setWalletBalance(BigDecimal.valueOf(100.0));
@@ -90,9 +90,9 @@ class ProjectSettlementServiceTest {
 
         FarmProject settledProject = projectSettlementService.settleProject(6L, 2000.0);
 
-        assertThat(investment.getFinalReturn()).isCloseTo(190.0, within(0.000001));
+        assertThat(investment.getFinalReturn()).isCloseTo(2000.0, within(0.000001));
         assertThat(investment.isSettled()).isTrue();
-        assertThat(investor.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(290.0));
+        assertThat(investor.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(2100.0));
         assertThat(farmer.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(1340.0));
         assertThat(lead.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(125.0));
         assertThat(settledProject.getFinalFarmerProfit()).isEqualByComparingTo(BigDecimal.valueOf(1140.0));
