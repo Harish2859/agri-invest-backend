@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +44,7 @@ class InvestmentServiceTest {
         FarmProject project = new FarmProject();
         project.setId(5L);
         project.setStatus(ProjectStatus.FUNDING_IN_PROGRESS);
-        project.setTargetAmount(1000.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
 
         Investment investment = new Investment();
         investment.setProject(project);
@@ -66,9 +67,9 @@ class InvestmentServiceTest {
     void completeInvestmentMarksProjectFullyFundedUsingCompletedMoneyOnly() {
         FarmProject project = new FarmProject();
         project.setId(7L);
-        project.setTargetAmount(1000.0);
-        project.setEscrowBalance(850.0);
-        project.setCurrentFunding(850.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
+        project.setEscrowBalance(BigDecimal.valueOf(850.0));
+        project.setCurrentFunding(BigDecimal.valueOf(850.0));
         project.setStatus(ProjectStatus.FUNDING_IN_PROGRESS);
 
         Investment investment = new Investment();
@@ -79,13 +80,14 @@ class InvestmentServiceTest {
 
         when(investmentRepository.findById(12L)).thenReturn(Optional.of(investment));
         when(projectRepository.findByIdWithLock(7L)).thenReturn(Optional.of(project));
+        when(investmentRepository.getActualRaisedAmount(7L)).thenReturn(1000.0);
         when(projectRepository.save(any(FarmProject.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(investmentRepository.save(any(Investment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Investment saved = investmentService.completeInvestment(12L, "txn-123");
 
         assertThat(saved.getStatus()).isEqualTo("COMPLETED");
-        assertThat(project.getEscrowBalance()).isEqualTo(1000.0);
+        assertThat(project.getEscrowBalance()).isEqualByComparingTo(BigDecimal.valueOf(1000.0));
         assertThat(project.getStatus()).isEqualTo(ProjectStatus.FULLY_FUNDED);
         verify(milestoneService).generateDefaultMilestones(project);
     }

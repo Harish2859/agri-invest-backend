@@ -91,12 +91,12 @@ class InvestmentControllerTest {
         InvestmentController controller = new InvestmentController();
         ReflectionTestUtils.setField(controller, "investmentService", new InvestmentService(null, null, null, null) {
             @Override
-            public Investment completeInvestment(Long id, String transactionId) {
+            public Investment processSecureCompletion(Long id, String idempotencyKey) {
                 throw new IllegalStateException("Investment already finalized");
             }
         });
 
-        ResponseEntity<?> response = controller.complete(5L, "txn-1");
+        ResponseEntity<?> response = controller.complete(5L, Map.of("idempotency_key", "txn-1"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isEqualTo(Map.of(

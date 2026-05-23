@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,23 +31,23 @@ class DashboardControllerTest {
 
         User investor = new User();
         investor.setId(11L);
-        investor.setWalletBalance(75.0);
+        investor.setWalletBalance(BigDecimal.valueOf(75.0));
 
         FarmProject activeProject = new FarmProject();
         activeProject.setId(1L);
         activeProject.setCropType("Rice");
         activeProject.setStatus(ProjectStatus.FUNDING_IN_PROGRESS);
         activeProject.setFarmer(farmer);
-        activeProject.setCurrentFunding(100.0);
-        activeProject.setTargetAmount(300.0);
+        activeProject.setCurrentFunding(BigDecimal.valueOf(100.0));
+        activeProject.setTargetAmount(BigDecimal.valueOf(300.0));
 
         FarmProject completedProject = new FarmProject();
         completedProject.setId(2L);
         completedProject.setCropType("Wheat");
         completedProject.setStatus(ProjectStatus.COMPLETED);
         completedProject.setFarmer(farmer);
-        completedProject.setCurrentFunding(200.0);
-        completedProject.setTargetAmount(300.0);
+        completedProject.setCurrentFunding(BigDecimal.valueOf(200.0));
+        completedProject.setTargetAmount(BigDecimal.valueOf(300.0));
 
         Investment activeInvestment = new Investment();
         activeInvestment.setInvestor(investor);
@@ -120,7 +121,7 @@ class DashboardControllerTest {
 
         assertThat(summary.get("capitalDeployed")).isEqualTo(300.0);
         assertThat(summary.get("currentHoldings")).isEqualTo(360.0);
-        assertThat(summary.get("walletBalance")).isEqualTo(75.0);
+        assertThat(summary.get("walletBalance")).isEqualTo(BigDecimal.valueOf(75.0));
         assertThat(summary.get("totalPortfolioValue")).isEqualTo(360.0);
         assertThat(cropDistribution).containsEntry("Rice", "33.3%");
         assertThat(cropDistribution).containsEntry("Wheat", "66.7%");

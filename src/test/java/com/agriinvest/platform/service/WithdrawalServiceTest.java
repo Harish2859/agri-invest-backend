@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,8 +46,9 @@ class WithdrawalServiceTest {
         FarmProject project = new FarmProject();
         project.setId(15L);
         project.setFarmer(farmer);
-        project.setWithdrawableBalance(5000.0);
-        project.setReleasedToFarmer(1200.0);
+        project.setWithdrawableBalance(BigDecimal.valueOf(5000.0));
+        project.setReleasedToFarmer(BigDecimal.valueOf(1200.0));
+        farmer.setWalletBalance(BigDecimal.valueOf(5000.0));
 
         when(userRepository.findByEmail("farmer@example.com")).thenReturn(Optional.of(farmer));
         when(projectRepository.findByIdWithLock(15L)).thenReturn(Optional.of(project));
@@ -56,8 +58,8 @@ class WithdrawalServiceTest {
         Withdrawal withdrawal = withdrawalService.requestWithdrawal(15L, 800.0, "AC 123", "farmer@example.com");
 
         assertThat(withdrawal.getStatus()).isEqualTo("COMPLETED");
-        assertThat(project.getWithdrawableBalance()).isEqualTo(4200.0);
-        assertThat(project.getReleasedToFarmer()).isEqualTo(2000.0);
+        assertThat(project.getWithdrawableBalance()).isEqualByComparingTo(BigDecimal.valueOf(4200.0));
+        assertThat(project.getReleasedToFarmer()).isEqualByComparingTo(BigDecimal.valueOf(1200.0));
     }
 
     @Test
@@ -69,8 +71,8 @@ class WithdrawalServiceTest {
         FarmProject project = new FarmProject();
         project.setId(15L);
         project.setFarmer(farmer);
-        project.setWithdrawableBalance(500.0);
-        project.setReleasedToFarmer(1200.0);
+        project.setWithdrawableBalance(BigDecimal.valueOf(500.0));
+        project.setReleasedToFarmer(BigDecimal.valueOf(1200.0));
 
         when(userRepository.findByEmail("farmer@example.com")).thenReturn(Optional.of(farmer));
         when(projectRepository.findByIdWithLock(15L)).thenReturn(Optional.of(project));

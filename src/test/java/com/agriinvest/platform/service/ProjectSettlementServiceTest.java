@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,20 +50,20 @@ class ProjectSettlementServiceTest {
     void settleProjectCreditsFarmerAndInvestorsUsingEquityPool() {
         User investor = new User();
         investor.setId(14L);
-        investor.setWalletBalance(100.0);
+        investor.setWalletBalance(BigDecimal.valueOf(100.0));
 
         User farmer = new User();
         farmer.setId(77L);
-        farmer.setWalletBalance(200.0);
+        farmer.setWalletBalance(BigDecimal.valueOf(200.0));
 
         User lead = new User();
         lead.setId(91L);
-        lead.setWalletBalance(25.0);
+        lead.setWalletBalance(BigDecimal.valueOf(25.0));
 
         FarmProject project = new FarmProject();
         project.setId(6L);
         project.setStatus(ProjectStatus.FULLY_FUNDED);
-        project.setTargetAmount(1000.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
         project.setEquityOffered(40.0);
         project.setFarmer(farmer);
 
@@ -91,10 +92,10 @@ class ProjectSettlementServiceTest {
 
         assertThat(investment.getFinalReturn()).isCloseTo(190.0, within(0.000001));
         assertThat(investment.isSettled()).isTrue();
-        assertThat(investor.getWalletBalance()).isCloseTo(290.0, within(0.000001));
-        assertThat(farmer.getWalletBalance()).isCloseTo(1340.0, within(0.000001));
-        assertThat(lead.getWalletBalance()).isCloseTo(125.0, within(0.000001));
-        assertThat(settledProject.getFinalFarmerProfit()).isCloseTo(1140.0, within(0.000001));
+        assertThat(investor.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(290.0));
+        assertThat(farmer.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(1340.0));
+        assertThat(lead.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(125.0));
+        assertThat(settledProject.getFinalFarmerProfit()).isEqualByComparingTo(BigDecimal.valueOf(1140.0));
         assertThat(settledProject.getStatus()).isEqualTo(ProjectStatus.COMPLETED);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -109,7 +110,7 @@ class ProjectSettlementServiceTest {
         FarmProject project = new FarmProject();
         project.setId(9L);
         project.setStatus(ProjectStatus.COMPLETED);
-        project.setTargetAmount(1000.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
 
         when(projectRepository.findByIdWithLock(9L)).thenReturn(Optional.of(project));
 
@@ -125,7 +126,7 @@ class ProjectSettlementServiceTest {
         FarmProject project = new FarmProject();
         project.setId(12L);
         project.setStatus(ProjectStatus.FUNDING_IN_PROGRESS);
-        project.setTargetAmount(1000.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
 
         when(projectRepository.findByIdWithLock(12L)).thenReturn(Optional.of(project));
 
@@ -140,12 +141,12 @@ class ProjectSettlementServiceTest {
     void settleProjectRejectsWhenNoCompletedInvestmentsFound() {
         User farmer = new User();
         farmer.setId(77L);
-        farmer.setWalletBalance(200.0);
+        farmer.setWalletBalance(BigDecimal.valueOf(200.0));
 
         FarmProject project = new FarmProject();
         project.setId(15L);
         project.setStatus(ProjectStatus.FULLY_FUNDED);
-        project.setTargetAmount(1000.0);
+        project.setTargetAmount(BigDecimal.valueOf(1000.0));
         project.setEquityOffered(40.0);
         project.setFarmer(farmer);
 
