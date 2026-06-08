@@ -61,3 +61,19 @@ WHERE kyc_status IS NULL AND verified = false;
 
 ALTER TABLE users
 ALTER COLUMN kyc_status SET NOT NULL;
+
+-- Fix ProjectStatus enum mapping (convert ordinal numbers to strings)
+UPDATE farm_projects SET status = 'PENDING' WHERE status = '0';
+UPDATE farm_projects SET status = 'FUNDING_IN_PROGRESS' WHERE status = '1';
+UPDATE farm_projects SET status = 'FULLY_FUNDED' WHERE status = '2';
+UPDATE farm_projects SET status = 'CROP_CYCLE_STARTED' WHERE status = '3';
+UPDATE farm_projects SET status = 'COMPLETED' WHERE status = '4';
+UPDATE farm_projects SET status = 'REJECTED' WHERE status = '5';
+
+
+-- Fix KycStatus enum mapping
+UPDATE users SET kyc_status = 'PENDING' WHERE kyc_status = '0';
+UPDATE users SET kyc_status = 'SUBMITTED' WHERE kyc_status = '1';
+UPDATE users SET kyc_status = 'APPROVED' WHERE kyc_status = '2';
+UPDATE users SET kyc_status = 'REJECTED' WHERE kyc_status = '3';
+
