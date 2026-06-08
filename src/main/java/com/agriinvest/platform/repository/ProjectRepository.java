@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface ProjectRepository extends JpaRepository<FarmProject, Long> {
     List<FarmProject> findByFarmerId(Long farmerId);
+    List<FarmProject> findByFarmerIdAndStatus(Long farmerId, ProjectStatus status);
     List<FarmProject> findByCropTypeContainingIgnoreCase(String cropType);
     List<FarmProject> findByStatus(ProjectStatus status);
 

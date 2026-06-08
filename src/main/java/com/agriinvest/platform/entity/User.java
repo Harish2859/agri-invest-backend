@@ -54,6 +54,9 @@ public class User implements UserDetails {
     @Column(name = "wallet_balance", nullable = false, precision = 12, scale = 2)
     private BigDecimal walletBalance = BigDecimal.ZERO;
 
+    @Column(name = "withdrawable_balance", nullable = false, precision = 12, scale = 2)
+    private BigDecimal withdrawableBalance = BigDecimal.ZERO;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum Role {

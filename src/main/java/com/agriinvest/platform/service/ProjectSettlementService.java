@@ -97,10 +97,10 @@ public class ProjectSettlementService {
             netHarvestPayout = BigDecimal.ZERO;
         }
 
-        BigDecimal farmerCurrentWallet = project.getFarmer().getWalletBalance() != null
-                ? project.getFarmer().getWalletBalance()
+        BigDecimal farmerCurrentWithdrawable = project.getFarmer().getWithdrawableBalance() != null
+                ? project.getFarmer().getWithdrawableBalance()
                 : BigDecimal.ZERO;
-        project.getFarmer().setWalletBalance(farmerCurrentWallet.add(netHarvestPayout));
+        project.getFarmer().setWithdrawableBalance(farmerCurrentWithdrawable.add(netHarvestPayout));
         userRepository.save(project.getFarmer());
 
         List<Investment> investments = investmentRepository.findByProjectIdAndStatus(projectId, "COMPLETED");

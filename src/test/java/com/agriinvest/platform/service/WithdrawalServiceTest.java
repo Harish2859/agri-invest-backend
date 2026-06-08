@@ -4,6 +4,7 @@ import com.agriinvest.platform.entity.FarmProject;
 import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.entity.Withdrawal;
 import com.agriinvest.platform.repository.ProjectRepository;
+import com.agriinvest.platform.repository.TransactionRecordRepository;
 import com.agriinvest.platform.repository.UserRepository;
 import com.agriinvest.platform.repository.WithdrawalRepository;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class WithdrawalServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TransactionRecordRepository transactionRepository;
 
     @Mock
     private WithdrawalRepository withdrawalRepository;
@@ -83,3 +87,4 @@ class WithdrawalServiceTest {
         assertThat(exception.getMessage()).contains("Insufficient authorized funds");
     }
 }
+

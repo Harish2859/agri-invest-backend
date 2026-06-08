@@ -70,7 +70,7 @@ class InvestmentControllerTest {
         investor.setEmail("investor@example.com");
         when(userRepository.findByEmail("investor@example.com")).thenReturn(Optional.of(investor));
 
-        ReflectionTestUtils.setField(controller, "investmentService", new InvestmentService(null, null, null, null, null) {
+        ReflectionTestUtils.setField(controller, "investmentService", new InvestmentService(null, null, null, null, null, null) {
             @Override
             public Investment initiateInvestment(Investment investment) {
                 throw new IllegalStateException("Project is not accepting funds. Status: COMPLETED");
@@ -89,7 +89,7 @@ class InvestmentControllerTest {
     @Test
     void completeInvestmentReturnsBadRequestForBusinessRuleErrors() {
         InvestmentController controller = new InvestmentController();
-        ReflectionTestUtils.setField(controller, "investmentService", new InvestmentService(null, null, null, null, null) {
+        ReflectionTestUtils.setField(controller, "investmentService", new InvestmentService(null, null, null, null, null, null) {
             @Override
             public Investment processSecureCompletion(Long id, String idempotencyKey) {
                 throw new IllegalStateException("Investment already finalized");
@@ -165,3 +165,4 @@ class InvestmentControllerTest {
         assertThat(response.getBody()).containsExactly(investment);
     }
 }
+

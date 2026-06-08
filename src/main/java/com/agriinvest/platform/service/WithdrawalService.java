@@ -5,6 +5,8 @@ import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.entity.Withdrawal;
 import com.agriinvest.platform.repository.ProjectRepository;
 import com.agriinvest.platform.repository.UserRepository;
+import com.agriinvest.platform.entity.TransactionRecord;
+import com.agriinvest.platform.repository.TransactionRecordRepository;
 import com.agriinvest.platform.repository.WithdrawalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,14 +22,17 @@ public class WithdrawalService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final WithdrawalRepository withdrawalRepository;
+    private final TransactionRecordRepository transactionRepository;
 
     @Autowired
     public WithdrawalService(ProjectRepository projectRepository,
                              UserRepository userRepository,
-                             WithdrawalRepository withdrawalRepository) {
+                             WithdrawalRepository withdrawalRepository,
+                             TransactionRecordRepository transactionRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.withdrawalRepository = withdrawalRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -73,29 +78,18 @@ public class WithdrawalService {
         userRepository.save(farmer);
         projectRepository.save(project);
 
-        return withdrawalRepository.save(withdrawal);
+        Withdrawal savedWithdrawal = withdrawalRepository.save(withdrawal);
+        String refId = "TXN-WIT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        transactionRepository.save(new TransactionRecord(refId, "WITHDRAWAL", amountValue, farmer));
+        return savedWithdrawal;
     }
 
     @Transactional
     public Withdrawal requestWalletWithdrawal(Double amount, String bankDetails, String email) {
-        if (amount == null || amount <= 0) {
+        if (amount == null) {
             throw new RuntimeException("Amount must be greater than zero");
         }
-        if (bankDetails == null || bankDetails.isBlank()) {
-            throw new RuntimeException("Bank details or UPI ID mandatory");
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        BigDecimal amountValue = BigDecimal.valueOf(amount);
-        BigDecimal walletBalance = user.getWalletBalance() != null ? user.getWalletBalance() : BigDecimal.ZERO;
-        if (amountValue.compareTo(walletBalance) > 0) {
-            throw new RuntimeException("Insufficient balance for withdrawal");
-        }
-
-        user.setWalletBalance(walletBalance.subtract(amountValue));
-        userRepository.save(user);
+        User user = executeFarmerWithdrawal(email, BigDecimal.valueOf(amount), bankDetails);
 
         Withdrawal withdrawal = new Withdrawal();
         withdrawal.setUser(user);
@@ -104,7 +98,34 @@ public class WithdrawalService {
         withdrawal.setBankDetails(bankDetails.trim());
         withdrawal.setRequestedAt(LocalDateTime.now());
 
-        return withdrawalRepository.save(withdrawal);
+        Withdrawal savedWithdrawal = withdrawalRepository.save(withdrawal);
+        String refId = "TXN-WIT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        transactionRepository.save(new TransactionRecord(refId, "WITHDRAWAL", BigDecimal.valueOf(amount), user));
+        return savedWithdrawal;
+    }
+
+    @Transactional
+    public User executeFarmerWithdrawal(String email, BigDecimal withdrawalAmount, String bankDetails) {
+        if (withdrawalAmount == null || withdrawalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Amount must be greater than zero");
+        }
+        if (bankDetails == null || bankDetails.isBlank()) {
+            throw new RuntimeException("Bank details or UPI ID mandatory");
+        }
+
+        User farmer = userRepository.findByEmailWithLock(email)
+                .orElseThrow(() -> new RuntimeException("Farmer profile not found"));
+
+        BigDecimal currentBalance = farmer.getWithdrawableBalance() != null
+                ? farmer.getWithdrawableBalance()
+                : BigDecimal.ZERO;
+
+        if (currentBalance.compareTo(withdrawalAmount) < 0) {
+            throw new IllegalArgumentException("Insufficient funds available for payout.");
+        }
+
+        farmer.setWithdrawableBalance(currentBalance.subtract(withdrawalAmount));
+        return userRepository.save(farmer);
     }
 
     @Transactional(readOnly = true)

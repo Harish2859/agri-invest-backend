@@ -55,6 +55,7 @@ class ProjectSettlementServiceTest {
         User farmer = new User();
         farmer.setId(77L);
         farmer.setWalletBalance(BigDecimal.valueOf(200.0));
+        farmer.setWithdrawableBalance(BigDecimal.valueOf(0.0));
 
         User lead = new User();
         lead.setId(91L);
@@ -93,7 +94,8 @@ class ProjectSettlementServiceTest {
         assertThat(investment.getFinalReturn()).isCloseTo(2000.0, within(0.000001));
         assertThat(investment.isSettled()).isTrue();
         assertThat(investor.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(2100.0));
-        assertThat(farmer.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(1340.0));
+        assertThat(farmer.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(200.0));
+        assertThat(farmer.getWithdrawableBalance()).isEqualByComparingTo(BigDecimal.valueOf(1140.0));
         assertThat(lead.getWalletBalance()).isEqualByComparingTo(BigDecimal.valueOf(125.0));
         assertThat(settledProject.getFinalFarmerProfit()).isEqualByComparingTo(BigDecimal.valueOf(1140.0));
         assertThat(settledProject.getStatus()).isEqualTo(ProjectStatus.COMPLETED);
@@ -142,6 +144,7 @@ class ProjectSettlementServiceTest {
         User farmer = new User();
         farmer.setId(77L);
         farmer.setWalletBalance(BigDecimal.valueOf(200.0));
+        farmer.setWithdrawableBalance(BigDecimal.valueOf(0.0));
 
         FarmProject project = new FarmProject();
         project.setId(15L);

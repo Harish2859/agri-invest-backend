@@ -1,6 +1,8 @@
 package com.agriinvest.platform.service;
 
 import com.agriinvest.platform.entity.User;
+import com.agriinvest.platform.entity.TransactionRecord;
+import com.agriinvest.platform.repository.TransactionRecordRepository;
 import com.agriinvest.platform.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,9 +13,11 @@ import java.math.BigDecimal;
 public class WalletService {
 
     private final UserRepository userRepository;
+    private final TransactionRecordRepository transactionRepository;
 
-    public WalletService(UserRepository userRepository) {
+    public WalletService(UserRepository userRepository, TransactionRecordRepository transactionRepository) {
         this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -31,6 +35,10 @@ public class WalletService {
         }
 
         user.setWalletBalance(currentBalance.add(amount));
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        String refId = "TXN-DEP-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        transactionRepository.save(new TransactionRecord(refId, "DEPOSIT", amount, savedUser));
+        return savedUser;
     }
 }
+

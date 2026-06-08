@@ -6,6 +6,7 @@ import com.agriinvest.platform.entity.ProjectStatus;
 import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.repository.InvestmentRepository;
 import com.agriinvest.platform.repository.ProjectRepository;
+import com.agriinvest.platform.repository.TransactionRecordRepository;
 import com.agriinvest.platform.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,9 @@ class InvestmentServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TransactionRecordRepository transactionRepository;
 
     @Mock
     private NotificationService notificationService;
@@ -102,3 +106,4 @@ class InvestmentServiceTest {
         verify(milestoneService).generateDefaultMilestones(project);
     }
 }
+

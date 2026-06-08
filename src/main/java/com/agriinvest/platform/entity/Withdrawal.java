@@ -1,5 +1,6 @@
 package com.agriinvest.platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -13,10 +14,12 @@ public class Withdrawal {
 
     @ManyToOne
     @JoinColumn(name = "project_id") // Best practice for foreign keys
+    @JsonIgnoreProperties({"farmer"})
     private FarmProject project;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"password", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
     private User user;
 
     private Double amount;

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,6 +57,7 @@ public class DashboardController {
         Double totalBudgetManaged = projects.stream().mapToDouble(p -> p.getTargetAmount().doubleValue()).sum();
         Double totalRaised = projects.stream().mapToDouble(p -> projectService.getAmountRaised(p.getId())).sum();
         Double totalWithdrawable = projects.stream().mapToDouble(p -> projectService.getWithdrawableAmount(p.getId())).sum();
+        BigDecimal totalEarnings = userService.calculateTrueFarmerEarnings(farmerId);
 
         Double totalWithdrawn = withdrawalRepository.getTotalWithdrawnByFarmer(farmerId);
         if (totalWithdrawn == null) totalWithdrawn = 0.0;
@@ -70,6 +72,7 @@ public class DashboardController {
         Map<String, Object> financials = new HashMap<>();
         financials.put("totalValueManaged", totalBudgetManaged);
         financials.put("totalActualRaised", totalRaised);
+        financials.put("totalEarnings", totalEarnings);
         financials.put("withdrawableBalance", totalWithdrawable);
         financials.put("totalWithdrawnToDate", totalWithdrawn);
         response.put("financials", financials);

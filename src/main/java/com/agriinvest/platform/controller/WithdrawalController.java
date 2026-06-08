@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -29,14 +30,18 @@ public class WithdrawalController {
      * View Payout History for a project
      */
     @GetMapping("/project/{projectId}")
-    public List<Withdrawal> getWithdrawalsByProject(@PathVariable Long projectId) {
-        return withdrawalRepository.findByProjectId(projectId);
+    public List<Map<String, Object>> getWithdrawalsByProject(@PathVariable Long projectId) {
+        return withdrawalRepository.findByProjectId(projectId).stream()
+                .map(this::toWithdrawalResponse)
+                .toList();
     }
 
     @GetMapping("/my-history")
     @PreAuthorize("hasAnyAuthority('FARMER','VILLAGE_LEAD')")
-    public ResponseEntity<List<Withdrawal>> getMyHistory(Authentication authentication) {
-        return ResponseEntity.ok(withdrawalService.getMyHistory(authentication.getName()));
+    public ResponseEntity<List<Map<String, Object>>> getMyHistory(Authentication authentication) {
+        return ResponseEntity.ok(withdrawalService.getMyHistory(authentication.getName()).stream()
+                .map(this::toWithdrawalResponse)
+                .toList());
     }
 
     /**
@@ -72,11 +77,24 @@ public class WithdrawalController {
                     bankDetails,
                     authentication.getName()
             );
-            return ResponseEntity.ok(withdrawal);
+            return ResponseEntity.ok(toWithdrawalResponse(withdrawal));
 
         } catch (Exception e) {
             // This will now return a clean error message instead of a crash
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    private Map<String, Object> toWithdrawalResponse(Withdrawal withdrawal) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", withdrawal.getId());
+        response.put("amount", withdrawal.getAmount());
+        response.put("status", withdrawal.getStatus());
+        response.put("requestedAt", withdrawal.getRequestedAt());
+        response.put("bankDetails", withdrawal.getBankDetails());
+        response.put("bankAccountNumber", withdrawal.getBankAccountNumber());
+        response.put("projectId", withdrawal.getProject() != null ? withdrawal.getProject().getId() : null);
+        response.put("userId", withdrawal.getUser() != null ? withdrawal.getUser().getId() : null);
+        return response;
     }
 }

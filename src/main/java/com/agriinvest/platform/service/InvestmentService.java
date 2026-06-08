@@ -5,6 +5,8 @@ import com.agriinvest.platform.entity.Investment;
 import com.agriinvest.platform.entity.ProjectStatus;
 import com.agriinvest.platform.repository.InvestmentRepository;
 import com.agriinvest.platform.repository.ProjectRepository;
+import com.agriinvest.platform.entity.TransactionRecord;
+import com.agriinvest.platform.repository.TransactionRecordRepository;
 import com.agriinvest.platform.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,17 +22,19 @@ public class InvestmentService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MilestoneService milestoneService;
+    private final TransactionRecordRepository transactionRepository;
 
     public InvestmentService(InvestmentRepository investmentRepository,
                              ProjectRepository projectRepository,
                              UserRepository userRepository,
                              NotificationService notificationService,
-                             MilestoneService milestoneService) {
+                             MilestoneService milestoneService, TransactionRecordRepository transactionRepository) {
         this.investmentRepository = investmentRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.milestoneService = milestoneService;
+        this.transactionRepository = transactionRepository;
     }
 
     /**
@@ -141,6 +145,7 @@ public class InvestmentService {
 
         userRepository.save(investor);
         projectRepository.save(project);
+        transactionRepository.save(new TransactionRecord(transactionId, "INVESTMENT", amountInvested, investor));
         return savedInvestment;
     }
 
@@ -173,3 +178,4 @@ public class InvestmentService {
         return completeInvestment(investmentId, idempotencyKey);
     }
 }
+

@@ -2,11 +2,14 @@ package com.agriinvest.platform.service;
 
 import com.agriinvest.platform.entity.User;
 import com.agriinvest.platform.entity.KycStatus;
+import com.agriinvest.platform.entity.ProjectStatus;
+import com.agriinvest.platform.repository.ProjectRepository;
 import com.agriinvest.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder; // Add this
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -17,6 +20,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder; // Add this
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -36,5 +42,11 @@ public class UserService {
     // Add this helper method for the Login process later
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public BigDecimal calculateTrueFarmerEarnings(Long farmerId) {
+        return projectRepository.findByFarmerIdAndStatus(farmerId, ProjectStatus.COMPLETED).stream()
+                .map(project -> project.getFinalFarmerProfit() != null ? project.getFinalFarmerProfit() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
